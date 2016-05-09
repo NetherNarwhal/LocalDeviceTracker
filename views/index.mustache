@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html><head>
+    <meta charset="utf-8">
+    <title>Device Status</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/css/style.css" />
+    <script src="/js/tiles.js"></script>
+</head><body onload="loadHosts({{hosts}})">
+<div id="modal" class="modal">
+    <form id="updateHost" class="formLayout" method="post">
+        <h3>Device Properties</h3>
+        <label>Name:</label>
+        <input id="name" name="name"><br/>
+        <label>Type:</label>
+        <select name="type" id="type">
+            <option value="desktop">desktop</option>
+            <option value="laptop">laptop</option>
+            <option value="tablet">tablet</option>
+            <option value="phone">phone</option>
+            <option value="console">console</option>
+            <option value="tv">tv</option>
+            <option value="router">router</option>
+            <option value="printer">printer</option>
+            <option value="server">server</option>
+            <option value="unknown">unknown</option>
+        </select><br/>
+        <label>Mac Address:</label>
+        <input id="mac" name="mac" readonly><br/>
+        <label>IP Address:</label>
+        <input id="ip" name="ip" readonly><br/>
+        <label>Online:</label>
+        <input id="online" name="online" readonly><br/><br/>
+        <input type="hidden" id="isdelete" name="isdelete" value="0">
+        <div class="button orange" onclick="toggleModal()">Cancel</div>
+        <div class="button" onclick="document.getElementById('updateHost').submit()">Save</div>
+        <div class="button red" onclick="document.getElementById('isdelete').value = '1'; document.getElementById('updateHost').submit()">Delete</div>
+    </form>
+</div>
+<div id="header">
+    <i class="fa fa-th-large" onclick="refreshList('tiles')"></i>
+    <i class="fa fa-th-list" onclick="refreshList('list')"></i>
+</div>
+<div id="host-container" class="tile-view">
+</div>
+</body></html>

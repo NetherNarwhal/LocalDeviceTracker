@@ -1,0 +1,288 @@
+* {
+    padding: 0;
+    margin: 0;
+}
+body {
+    font-family: 'trebuchet MS',Arial,Helvetica,sans-serif;
+    background-color: rgb(245,245,245);
+}
+
+/****************************
+ *          HEADER          *
+ ****************************/
+#header {
+    width: 100%;
+    background: #444;
+    background-image: linear-gradient(#555 0px, #333 100%);
+    box-shadow: 0px 6px 6px 0px rgba(0,0,0,0.2);
+    color: #ddd;
+    padding: 5px 0;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: flex-end;
+    align-items: center;
+}
+#header i {
+    margin-right: 20px;
+    font-size: 20px;
+	text-shadow: 2px 2px 2px rgba(0, 0, 0, .5);
+    color: #fff;
+    cursor: pointer;
+}
+
+/****************************
+ *        TILE VIEW         *
+ ****************************/
+.tile-view {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: space-around;
+}
+.tile-view .host {
+    margin: 10px;
+    color: #FFF;
+    width: 200px;
+    height: 106px;
+    overflow: hidden;
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    border-bottom-width: 3px;
+    border-right-width: 3px;
+    box-shadow: 4px 4px 4px 0px rgba(0,0,0,0.2);
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    cursor: pointer;
+}
+.tile-view .online {
+    border-color: #708556;
+    background-size: 60px 60px;
+    background-color: #7A9557;
+    background-image: linear-gradient(135deg,
+        rgba(255, 255, 255, .1) 25%, transparent 25%, transparent 50%,
+        rgba(255, 255, 255, .1) 50%, rgba(255, 255, 255, .1) 75%,
+        transparent 75%, transparent);
+    animation: animate-stripes 3s linear infinite;
+}
+@keyframes animate-stripes {
+    0% { background-position: 0 0; } 100% { background-position: 60px 0; }
+}
+
+.tile-view .offline {
+    background: repeating-linear-gradient(45deg,
+        rgb(190, 190, 190), rgb(190, 190, 190) 20px,
+        rgb(180, 180, 180) 20px, rgb(180, 180, 180) 40px
+    );
+}
+.tile-view .title {
+    padding-top: 6px;
+    width: 100%;
+    height: 40px;
+    font-size: 20px;
+    overflow: hidden;
+    white-space: nowrap;
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+	text-shadow: 2px 2px 2px rgba(0, 0, 0, .4);
+}
+.tile-view .title i {
+    padding: 0px 10px;
+    font-size: 36px;
+}
+.tile-view .details {
+    width:100%;
+    height: 54px;
+    padding-top: 2px;
+    font-size: 14px;
+    overflow: hidden;
+    white-space: nowrap;
+    display: flex;
+    flex-flow: column nowrap;
+}
+.tile-view .details span {
+    margin-left: 30px;
+}
+.tile-view .details i {
+    padding-right: 5px;
+}
+
+/****************************
+ *        LIST VIEW         *
+ ****************************/
+.list-view {
+    display: flex;
+    flex-flow: column nowrap;
+}
+.list-view .host {
+    color: #666;
+    width: 90%;
+    min-height: 50px; /* Needed or % height of sub-elements won't work. */
+    margin-bottom: 5px;
+    margin-left: 5%;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    background: #fff;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    cursor: pointer;
+}
+.list-view .title {
+    width: 30%;
+    min-width: 200px;
+    height: 100%;
+    min-height: 40px;
+    font-size: 18px;
+    overflow: hidden;
+    white-space: nowrap;
+
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+	text-shadow: 1px 1px 1px rgba(0, 0, 0, .1);
+}
+.list-view .title i {
+    background-color: #444;
+    border-radius: 4px;
+    color: #eee;
+    padding: 0 10px;
+    margin-right: 10px;
+    width: 40px;
+    height: 100%;
+    min-height: 40px;
+    font-size: 30px;
+    display:flex;
+    justify-content: center;
+    align-items: center;
+	text-shadow: 2px 2px 2px rgba(0, 0, 0, .3);
+}
+.list-view .online .title i {
+    background-color: rgb(92, 184, 92);
+}
+.list-view .details {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: flex-start;
+    width: 70%;
+}
+.list-view .details span {
+    padding: 0px 10px;
+    width: 30%;
+    min-width: 200px;
+}
+
+/****************************
+ *          MODAL           *
+ ****************************/
+.modal {
+    visibility: hidden;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    z-index: 9999;
+    background: rgba(0,0,0,0.6);
+}
+.modal > div, .modal > form {
+    width: 60%;
+    min-width: 250px;
+    position: relative;
+    margin: 10% auto;
+    padding: 0 0 110px 0;
+    border-radius: 4px;
+    background: #fff;
+}
+.modal h3 {
+    border-radius: 2px;
+    color: white;
+    background: rgb(42, 99, 150);
+    background-image: linear-gradient(rgb(56, 134, 201) 0px, rgb(42, 99, 150) 100%);
+    padding: 5px 10px;
+    margin-bottom: 10px;
+    text-align: left;
+    box-shadow: 0px 3px 3px 0px rgba(0,0,0,0.2);
+}
+.formLayout label {
+    display: block;
+    width: 45%;
+    float: left;
+    margin-bottom: 10px;
+    text-align: right;
+    padding-right: 1%;
+}
+.formLayout input, .formLayout select {
+    display: block;
+    width: 45%;
+    float: left;
+    margin-bottom: 10px;
+    padding: 2px 2px;
+    border: 1px solid #444; 
+}
+.formLayout input[readonly] {
+    border: none;
+}
+/****************************
+ *        BUTTONS           *
+ ****************************/
+.button {
+    position: relative;
+    vertical-align: middle;
+    display: block;
+    float: right;
+    width: 20%;
+    height: 30px;
+    padding: 0;
+    margin-top: 20px;
+    margin-right: 10px;
+    font-size: 16px;
+    line-height: 30px;
+    color: white;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.25);
+    background: rgb(42, 99, 150);
+    background-image: linear-gradient(rgb(56, 134, 201) 0px, rgb(42, 99, 150) 100%);
+    border: 0;
+    border-radius: 3px;
+    border-bottom: 2px solid rgb(38, 88, 140);
+    cursor: pointer;
+    text-decoration: none;
+}
+.button:hover {
+    font-weight: bold;
+    background: rgb(46, 109, 165);
+    background-image: linear-gradient(rgb(62, 147, 221) 0px, rgb(46, 109, 165) 100%);
+    border-bottom: 2px solid rgb(42, 97, 154);
+}
+.button:active {
+    top: 1px;
+    outline: none;
+    box-shadow: none;
+}
+.orange {
+    background: rgb(243, 154, 22);
+    background-image: linear-gradient(rgb(253, 183, 77) 0px, rgb(243, 154, 22) 100%);
+    border-bottom: 2px solid rgb(227, 141, 19);
+}
+.orange:hover {
+    background: rgb(255, 162, 24);
+    background-image: linear-gradient(rgb(255, 190, 86) 0px, rgb(255, 162, 24) 100%);
+    border-bottom: 2px solid rgb(240, 145, 20);
+}
+.red {
+    background: rgb(218, 74, 56);
+    background-image: linear-gradient(rgb(228, 90, 60) 0px, rgb(218, 74, 56) 100%);
+    border-bottom: 2px solid rgb(200, 60, 50);
+    float: left;
+    margin-left: 10px;
+    margin-right: 0;
+}
+.red:hover {
+    background: rgb(240, 82, 62);
+    background-image: linear-gradient(rgb(248, 96, 66) 0px, rgb(240, 82, 62) 100%);
+    border-bottom: 2px solid rgb(210, 65, 53);
+}
