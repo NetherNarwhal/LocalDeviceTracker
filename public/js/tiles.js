@@ -14,6 +14,8 @@ function loadHosts(hosts) {
     var viewOpt = document.getElementById("view");
     if (viewOpt === null || viewOpt.options.selectedIndex == 0) {
         refreshList("tiles");
+    } else if (viewOpt.options.selectedIndex == 1) {
+        refreshList("tiles-lg");
     } else {
         refreshList("list");
     }
@@ -22,6 +24,8 @@ function loadHosts(hosts) {
 function refreshList(style) {
     if (style == "list") {
         showList(hostListFull);
+    } else if (style == "tiles-lg") {
+        showTilesLg(hostListFull);
     } else {
         showTiles(hostListFull);
     }
@@ -34,19 +38,32 @@ function showTiles(hosts) {
 
     for (var i = 0; i < hosts.length; i++) {
         var host = hosts[i];
-        var html = "<div class='host " + (host.online ? "online" : "offline") + "' onclick='showModal(\""
-            + escapeQuote(host.name) + "\",\""
-            + host.type + "\",\""
-            + host.mac + "\",\""
-            + host.ip + "\","
-            + host.online + ")'>";
+        var html = "<div class='host " + (host.online ? "online" : "offline") + "' onclick='showModal(\"" + host.mac + "\")'>";
+        html += "<div class='type'><i class='fa " + getTypeIcon(host.type) + "'></i></div>"
+        html += "<div class='title'>" + shortenHostName(host.name) + "</div>";
+        html += "<div class='time'>" + getDateStringShort(host.last) + "</div>";
+        html += "</div>";
+        container.innerHTML += html;
+    }
+}
+
+/** Just grab the first word in the name. */
+function shortenHostName(name) {
+    return name.split(" ", 1)[0];
+}
+
+function showTilesLg(hosts) {
+    var container = document.getElementById("host-container");
+    container.className = "tile-lg-view";
+    container.innerHTML = "";
+
+    for (var i = 0; i < hosts.length; i++) {
+        var host = hosts[i];
+        var html = "<div class='host " + (host.online ? "online" : "offline") + "' onclick='showModal(\"" + host.mac + "\")'>";
         html += "<div class='title'><i class='fa " + getTypeIcon(host.type) + "'></i>" + host.name + "</div>";
-//        html += "<div class='details'><span><b>Mac: </b>" + host.mac;
-        html += "<div class='details'><span><i class='fa fa-tag'></i> " + host.mac;
-//        html += "</span><span><b>IP: </b>" + host.ip;
-        html += "</span><span><i class='fa fa-eye'></i> " + host.ip;
-//        html += "</span><span><b>Last: </b>" + getDateString(host.last) + "</span></div>";
-        html += "</span><span><i class='fa fa-clock-o'></i> " + getDateString(host.last) + "</span></div>";
+        html += "<div class='details'><span class='mac'><i class='fa fa-tag'></i> " + host.mac;
+        html += "</span><span class='ip'><i class='fa fa-eye'></i> " + host.ip;
+        html += "</span><span class='time'><i class='fa fa-clock-o'></i> " + getDateString(host.last) + "</span></div>";
         html += "</div>";
         container.innerHTML += html;
     }
@@ -59,27 +76,21 @@ function showList(hosts) {
 
     for (var i = 0; i < hosts.length; i++) {
         var host = hosts[i];
-        var html = "<div class='host " + (host.online ? "online" : "offline") + "' onclick='showModal(\""
-            + escapeQuote(host.name) + "\",\""
-            + host.type + "\",\""
-            + host.mac + "\",\""
-            + host.ip + "\","
-            + host.online + ")'>";
+        var html = "<div class='host " + (host.online ? "online" : "offline") + "' onclick='showModal(\"" + host.mac + "\")'>";
         html += "<div class='title'><i class='fa " + getTypeIcon(host.type) + "'></i>" + host.name + "</div>";
-//        html += "<div class='details'><span><b>Mac: </b>" + host.mac;
-        html += "<div class='details'><span><i class='fa fa-tag'></i> " + host.mac;
-//        html += "</span><span><b>IP: </b>" + host.ip;
-        html += "</span><span><i class='fa fa-eye'></i> " + host.ip;
-//        html += "</span><span><b>Last: </b>" + getDateString(host.last) + "</span></div>";
-        html += "</span><span><i class='fa fa-clock-o'></i> " + getDateString(host.last) + "</span></div>";
+        html += "<div class='details'><span class='mac'><i class='fa fa-tag'></i> " + host.mac;
+        html += "</span><span class='ip'><i class='fa fa-eye'></i> " + host.ip;
+        html += "</span><span class='time'><i class='fa fa-clock-o'></i> " + getDateString(host.last) + "</span></div>";
         html += "</div>";
         container.innerHTML += html;
     }
 }
 
+/*
 function escapeQuote(str) {
   return (str + '').replace(/[\']/g, '&apos;');
 }
+*/
 
 function getTypeIcon(type) {
     switch (type.toLowerCase()) {
@@ -106,6 +117,24 @@ function getTypeIcon(type) {
     }
 }
 
+function getDateStringShort(date) {
+    if (date === undefined || date === null) {
+        return "Never";
+    }
+    // Convert incoming string into a date object.
+    date = new Date(date);
+
+    var curntDate = new Date();
+    if (date.toDateString() === curntDate.toDateString()) {
+        // If today, then just show time
+        // Note: Format doesn't quite work on Firefox for Android (as of v43).
+        return "<i class='fa  fa-clock-o'></i> "
+            + date.toLocaleTimeString('en-US', {hour12: true, hour: "numeric", minute: "numeric"});
+    }
+    // If not today, just show date in the format of (M/D/YYYY).
+    return date.toLocaleDateString('en-US');
+}
+
 function getDateString(date) {
     if (date === undefined || date === null) {
         return "Never";
@@ -113,26 +142,41 @@ function getDateString(date) {
     // Convert incoming string into a date object.
     date = new Date(date);
 
-    // If today, then show that instead of numeric date.
     var curntDate = new Date();
+    var dayText;
     if (date.toDateString() === curntDate.toDateString()) {
-        return "Today at " + date.toLocaleTimeString('en-US', {hour12: true, hour: "numeric", minute: "numeric"});
+        // If today, then show that instead of numeric date.
+        dayText = "Today at ";
+    } else {
+        // If not today, we want to show date in the format of (M/D/YYYY).
+        // Note: Format doesn't quite work on Firefox for Android (as of v43).
+        dayText = date.toLocaleDateString('en-US') + " ";
     }
-
-    // If not today, we want to show date in the format of (M/D/YYYY H:M).
-    // Note: Format doesn't quite work on Firefox for Android (v43).
-    return date.toLocaleDateString('en-US') + " "
-        + date.toLocaleTimeString('en-US', {hour12: true, hour: "numeric", minute: "numeric"});
+    return dayText + date.toLocaleTimeString('en-US', {hour12: true, hour: "numeric", minute: "numeric"});
 }
 
-function showModal(name, type, mac, ip, online) {
-    document.getElementById("name").value = name;
+function showModal(hostId) {
+    // Look up the entry in the host file.
+    var host = null;
+    for (var i = 0; i < hostListFull.length; i++) {
+        if (hostListFull[i].mac == hostId) {
+            host = hostListFull[i];
+            break;
+        }
+    }
+    if (host === null) {
+        console.log("Couldn't find host '" + hostId + "'");
+        return;
+    }
+
+    // Set the html fields to the host values.
+    document.getElementById("name").value = host.name;
 
     // Pick to correct type in the drop down.
     var selectType = document.getElementById("type");
     var found = false;
     for (var i = 0; i < selectType.length; i++) {
-        if (selectType[i].value == type) {
+        if (selectType[i].value == host.type) {
             selectType.options.selectedIndex = i;
             found = true;
             break;
@@ -143,9 +187,10 @@ function showModal(name, type, mac, ip, online) {
         selectType.options.selectedIndex = selectType.length - 1;
     }
 
-    document.getElementById("mac").value = mac;
-    document.getElementById("ip").value = ip;
-    document.getElementById("online").value = online;
+    document.getElementById("mac").value = host.mac;
+    document.getElementById("ip").value = host.ip;
+    document.getElementById("manufacturer").value = host.manufacturer;
+    document.getElementById("online").value = host.online;
     toggleModal();
 }
 

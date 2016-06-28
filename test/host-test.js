@@ -460,5 +460,4 @@ describe("Host", function() {
             assert.strictEqual(list[3].mac, "A1:B2:C3:00:00:0D", "Wrong host was removed or hosts are out of order?");
         });
     });
-
 });

@@ -2,6 +2,7 @@
 var spawn = require('child_process').spawn;
 var jsonfile = require('jsonfile');
 var os = require('os');
+var request = require('request');
 var hosts = [];
 var curntMac;
 var curntIP;
@@ -91,6 +92,7 @@ function refresh() {
         persistList();
 
         // Schedule this refresh for every 5 minutes, if not already done.
+        // TODO: Should externalize the refresh timer!
         if (timer === undefined) {
             console.log("Setting timer...");
             timer = setInterval(function() {
@@ -226,6 +228,29 @@ function getIPAddress() {
     return curntIP
 }
 
+/* Leverages a web API to get the device manufacturer based on the mac address. */
+function getDeviceManufacturer(host) {
+    // Get vendor info for unknown mac addresses using http://api.macvendors.com/ as older versions of nmap are suspect.
+    request("http://api.macvendors.com/" + host.mac, function(error, response, body) {
+        // Handle error situations.
+        if (error) {
+            console.log("Error on execution of manufacturer lookup API for '" + mac + "': ");
+            console.log(error);
+            return;
+        }
+        if (response.statusCode == 404 || body === null || body == "") {
+            host.manufacturer = "unknown";
+//            console.log("Manufacturer for '" + mac + "'='" + body + "'");
+        } else if (response.statusCode == 200) {
+            host.manufacturer = body;
+//            console.log("Manufacturer for '" + mac + "'='" + body + "'");
+        } else {
+            console.log("Bad return from manufacturer lookup API for '" + mac + "': " + response.statusCode);
+            return;
+        }
+    });
+}
+
 /** Updates the existing host list based on the provided nmap results. */
 function synchList(latest) {
     var currentTime = new Date();
@@ -275,6 +300,13 @@ function synchList(latest) {
         }
     }
 
+    // Make sure all devices have a manufacturer listed.
+    for (var k = 0; k < hosts.length; k++) {
+        if (hosts[k].manufacturer === undefined) {
+            getDeviceManufacturer(hosts[k]);
+        }
+    }
+
     // See some new entries may have been added, resort the list.
     if (newAdded) {
         sortList();
@@ -312,6 +344,7 @@ Hosts.forTesting = {
     "parseNMapOutput": parseNMapOutput,
     "getMACAddress": getMACAddress,
     "getIPAddress": getIPAddress,
+    "getDeviceManufacturer": getDeviceManufacturer,
     "synchList": synchList,
     "sortList": sortList
 };
