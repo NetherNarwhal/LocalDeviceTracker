@@ -5,26 +5,27 @@
 body {
     font-family: 'trebuchet MS',Arial,Helvetica,sans-serif;
     background-color: rgb(245,245,245);
+    font-size: 12pt;
 }
 
 /****************************
  *          HEADER          *
  ****************************/
-#header {
+header {
     width: 100%;
     background: #444;
     background-image: linear-gradient(#555 0px, #333 100%);
     box-shadow: 0px 6px 6px 0px rgba(0,0,0,0.2);
     color: #ddd;
-    padding: 5px 0;
+    padding: 6px 0;
     display: flex;
     flex-flow: row nowrap;
     justify-content: flex-end;
     align-items: center;
 }
-#header i {
-    margin-right: 20px;
-/*    font-size: 18px; */
+header i {
+    margin-right: 10px;
+    font-size: 18px;
 	text-shadow: 2px 2px 2px rgba(0, 0, 0, .5);
     color: #fff;
     cursor: pointer;
@@ -43,7 +44,7 @@ body {
     color: #FFF;
     width: 100px;
     max-width: 20vw;
-    height: 106px;
+    height: 110px;
     overflow: hidden;
     border: 1px solid #aaa;
     border-radius: 5px;
@@ -69,8 +70,7 @@ body {
     font-size: 40px;
 }
 .tile-view .title {
-    padding-top: 6px;
-    height: 40px;
+    height: 42px;
     font-size: 18px;
     overflow: hidden;
     white-space: nowrap;
@@ -117,13 +117,7 @@ body {
         rgba(255, 255, 255, .1) 25%, transparent 25%, transparent 50%,
         rgba(255, 255, 255, .1) 50%, rgba(255, 255, 255, .1) 75%,
         transparent 75%, transparent);
-/*    animation: animate-stripes 3s linear infinite; */
 }
-/*
-@keyframes animate-stripes {
-    0% { background-position: 0 0; } 100% { background-position: 60px 0; }
-}
-*/
 .tile-lg-view .offline {
     background: repeating-linear-gradient(45deg,
         rgb(190, 190, 190), rgb(190, 190, 190) 20px,
@@ -243,12 +237,11 @@ body {
     z-index: 9999;
     background: rgba(0,0,0,0.6);
 }
-.modal > div, .modal > form {
+.modal > form {
     width: 60%;
-    min-width: 250px;
+    min-width: 300px;
     position: relative;
     margin: 10% auto;
-    padding: 0 0 110px 0;
     border-radius: 4px;
     background: #fff;
 }
@@ -264,13 +257,14 @@ body {
 }
 .formLayout label {
     display: block;
-    width: 45%;
+    width: 50%;
     float: left;
     margin-bottom: 10px;
     text-align: right;
     padding-right: 1%;
 }
 .formLayout input, .formLayout select {
+    font-size: 12pt;
     display: block;
     width: 45%;
     float: left;
@@ -281,15 +275,24 @@ body {
 .formLayout input[readonly] {
     border: none;
 }
+#type {
+    font-family: FontAwesome,'trebuchet MS',Arial,Helvetica,sans-serif;
+}
+
 /****************************
  *        BUTTONS           *
  ****************************/
+.button-row {
+    width: 100%;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: flex-end;
+    align-items: center;
+    padding-bottom: 10px;
+}
 .button {
-    position: relative;
-    vertical-align: middle;
-    display: block;
-    float: right;
-    width: 20%;
+    width: 15%;
+    min-width: 60px;
     height: 30px;
     padding: 0;
     margin-top: 20px;
@@ -332,9 +335,6 @@ body {
     background: rgb(218, 74, 56);
     background-image: linear-gradient(rgb(228, 90, 60) 0px, rgb(218, 74, 56) 100%);
     border-bottom: 2px solid rgb(200, 60, 50);
-    float: left;
-    margin-left: 10px;
-    margin-right: 0;
 }
 .red:hover {
     background: rgb(240, 82, 62);

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html><head>
+    <meta charset="utf-8">
+    <title>Device Status</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://opensource.keycdn.com/fontawesome/4.7.0/font-awesome.min.css">
+    <link rel="stylesheet" href="style.css" />
+</head><body>
+<header>
+    <span style="padding-left: 10px; font-weight: bold">Local Device Tracker</span>
+    <span style="flex-grow:50"></span>
+    <i class="fa fa-th fa-fw" title="Tiles" onclick="tileView.format = SMALL_TILE_VIEW"></i>
+    <i class="fa fa-th-large fa-fw" title="Large Tiles" onclick="tileView.format = LARGE_TILE_VIEW""></i>
+    <i class="fa fa-th-list fa-fw" title="List" onclick="tileView.format = LIST_TILE_VIEW"></i>
+    <!-- fa-moon-o  fa-sun-o -->
+    <i class="fa fa-refresh fa-fw" style="padding-left: 10px;" title="Refresh" onclick="tileView.refreshHosts();"></i>
+</header>
+<div id="host-container"></div>
+<div id="modal" class="modal">
+    <form id="updateHost" class="formLayout" method="post">
+        <h3>Device Properties</h3>
+        <label>Owner:</label>
+        <input id="owner" name="owner"><br/>
+        <label>Name:</label>
+        <input id="name" name="name"><br/>
+        <label>Type:</label>
+        <select name="type" id="type">
+            <option value="desktop">&#xf108; desktop</option>
+            <option value="laptop">&#xf109; laptop</option>
+            <option value="tablet">&#xf10a; tablet</option>
+            <option value="phone">&#xf10b; phone</option>
+            <option value="console">&#xf11b; console</option>
+            <option value="tv">&#xf26c; tv</option>
+            <option value="router">&#xf1eb; router</option>
+            <option value="printer">&#xf02f; printer</option>
+            <option value="server">&#xf233; server</option>
+            <option value="storage">&#xf1c0; storage</option>
+            <option value="micro">&#xf2db; micro</option>
+            <option value="thermometer">&#xf2c7; thermometer</option>
+            <option value="microphone">&#xf130; microphone</option>
+            <option value="linux">&#xf17c; linux</option>
+            <option value="windows">&#xf17a; windows</option>
+            <option value="apple">&#xf179; apple</option>
+            <option value="android">&#xf17b; android</option>
+            <option value="cloud">&#xf0c2; cloud</option>
+            <option value="unknown">&#xf059; unknown</option>
+        </select><br/>
+        <label>Mac Address:</label>
+        <input id="mac" name="mac" readonly><br/>
+        <label>IP Address:</label>
+        <input id="ip" name="ip" readonly><br/>
+        <label>Manufacturer:</label>
+        <input id="manufacturer" name="manufacturer" readonly><br/>
+        <label>Last Online:</label>
+        <input id="last" name="last" readonly><br/><br/>
+        <div class="button-row">
+            <div class="button red" style="margin-left: 10px;" onclick="deleteHost()">Delete</div>
+            <span style="flex-grow:50"></span>
+            <div class="button" onclick="updateHost()">Save</div>
+            <div class="button orange" onclick="hideModal()">Cancel</div>
+       </div>
+    </form>
+</div>
+
+<script src="https://unpkg.com/vue/dist/vue.min.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script> <!-- For AJAX calls: https://github.com/axios/axios -->
+<script>
+// All possible view styles for the list of hosts.
+const SMALL_TILE_VIEW = "small";
+const LARGE_TILE_VIEW = "large";
+const LIST_TILE_VIEW = "list";
+
+// LocalStorage persistence for host view style preference.
+const viewPreferenceKey = "ldt-view";
+function getViewPreference() {
+    return localStorage.getItem(viewPreferenceKey) || SMALL_TILE_VIEW;
+}
+function setViewPreference(value) {
+    return localStorage.setItem(viewPreferenceKey, value);
+}
+
+// Templates for the various host layouts used by Vue component below.
+const smallTileTemplate = '<div v-if="isFormatSmall" class="host" :class="getStatusClass" @click="viewHostDetails">'
+    + '<div class="type"><i class="fa" :class="getTypeIcon"></i></div>'
+    + '<div class="title">{{ getShortName }}</div>'
+    + '<div class="time">{{ getShortDate }}</div>'
+    + '</div>';
+const largeTileTemplate = '<div v-else-if="isFormatLarge" class="host" :class="getStatusClass" @click="viewHostDetails">'
+    + '<div class="title"><i class="fa" :class="getTypeIcon"></i> {{ getLongName }}</div>'
+    + '<div class="details">'
+    + '<span class="mac"><i class="fa fa-tag"></i> {{ host.mac }}</span>'
+    + '<span class="ip"><i class="fa fa-eye"></i> {{ host.ip }}</span>'
+    + '<span class="time"><i class="fa fa-clock-o"></i> {{ getDate }}</span>'
+    + '</div></div>';
+// Currently, list is the same content as large, but leaving separate in case we want to differentiate them later.
+const listTileTemplate = '<div v-else-if="isFormatList" class="host" :class="getStatusClass" @click="viewHostDetails">'
+    + '<div class="title"><i class="fa" :class="getTypeIcon"></i> {{ getLongName }}</div>'
+    + '<div class="details">'
+    + '<span class="mac"><i class="fa fa-tag"></i> {{ host.mac }}</span>'
+    + '<span class="ip"><i class="fa fa-eye"></i> {{ host.ip }}</span>'
+    + '<span class="time"><i class="fa fa-clock-o"></i> {{ getDate }}</span>'
+    + '</div></div>';
+
+// Component for each host tile.
+Vue.component('tile', {
+    props: ['host', 'format'],
+    computed: {
+        isFormatSmall: function() { // Needed because we can't reference external variables in template.
+            return (this.format === SMALL_TILE_VIEW);
+        },
+        isFormatLarge: function() { // Needed because we can't reference external variables in template.
+            return (this.format === LARGE_TILE_VIEW);
+        },
+        isFormatList: function() { // Needed because we can't reference external variables in template.
+            return (this.format === LIST_TILE_VIEW);
+        },
+        getStatusClass: function() {
+            return (this.host.online ? "online" : "offline");
+        },
+        getLongName: function() {
+            if (this.host.owner === undefined) return this.host.name;
+            return addPossesion(this.host.owner) + " " + this.host.name;
+        },
+        getShortName: function() {
+            if (this.host.owner === undefined) return this.host.name.split(" ", 1)[0];
+            return addPossesion(this.host.owner.split(" ", 1)[0]);
+        },
+        getTypeIcon: function() {
+            switch (this.host.type.toLowerCase()) {
+                case "desktop": return "fa-desktop";
+                case "laptop": return "fa-laptop";
+                case "tablet": return "fa-tablet";
+                case "phone": return "fa-mobile";
+                case "console": return "fa-gamepad";
+                case "tv": return "fa-tv";
+                case "router": return "fa-wifi";
+                case "printer": return "fa-print";
+                case "server": return "fa-server";
+                case "storage": return "fa-database";
+                case "micro": return "fa-microchip";
+                case "thermometer": return "fa-thermometer";
+                case "microphone": return "fa-microphone";
+                case "linux": return "fa-linux";
+                case "windows": return "fa-windows";
+                case "apple": return "fa-apple";
+                case "android": return "fa-android";
+                case "cloud": return "fa-cloud";
+                default: return "fa-question-circle";
+            }
+        },
+        getDate: function() {
+            return getDateText(this.host.last);
+        },
+        getShortDate: function() {
+            return getDateText(this.host.last, false);
+        }
+    },
+    methods: {
+        viewHostDetails: function(event) {
+            showModal(this.host);
+        }
+    },
+    template: smallTileTemplate + largeTileTemplate + listTileTemplate
+})
+
+// Root component for all the tiles.
+let tileView = new Vue({
+    el: '#host-container',
+    data: {
+        hosts: [], // This component should reload when the host list is changed, so change it to refresh the list.
+        format: getViewPreference()
+    },
+    computed: {
+        getClass: function() {
+            switch (this.format) {
+                case LARGE_TILE_VIEW: return "tile-lg-view";
+                case LIST_TILE_VIEW: return "list-view";
+                default: return "tile-view";
+            }
+        }
+    },
+    watch: {
+        format: function(val) {
+            setViewPreference(val);
+        }
+    },
+    methods: {
+        refreshHosts: function() {
+            console.log("Reloading hosts...");
+            var vm = this; // Cache the instance so we can reference it in the promise below.
+            axios.get("/api/hosts")
+                .then(function (response) {
+                    if (response.status !== 200) {
+                        // TODO: Problem!
+                        console.error(response);
+                        return;
+                    }
+                    // Sort the list (by owner, then name)
+                    let hosts = response.data;
+                    hosts.sort(function(a, b) {
+                        let an = (a.owner !== undefined) ? a.owner : a.name;
+                        let bn = (b.owner !== undefined) ? b.owner : b.name;
+                        return (an.localeCompare(bn));
+                    });
+                    vm.hosts = hosts;
+                })
+                .catch(function (error) {
+                    // TODO: Problem!
+                    console.error(error);
+                });
+        }
+    },
+    mounted: function() {
+        // Do an asynch load of the hosts.
+        this.refreshHosts();
+    },
+    template: '<div :class="getClass"><tile v-for="host in hosts" :key="host.mac" :host="host" :format="format"></tile></div>'
+});
+
+function addPossesion(owner) {
+    if (owner.charAt(owner.length - 1) == "s") return owner + "'";
+    return owner + "'s";
+}
+
+function getDateText(date, useLongFmt) {
+    if (date === undefined) return "Never";
+    if (useLongFmt === undefined) useLongFmt = true;
+    // Convert incoming string into a date object.
+    date = new Date(date);
+
+    let curntDate = new Date();
+    if (useLongFmt) {
+        // Return the Long format, which is either the time (Today at H:MM) if the date is today or the date/time (M/D/YYYY HH:MM) if not.
+        let dayText;
+        if (date.toDateString() === curntDate.toDateString()) {
+            // If today, then show that instead of numeric date.
+            dayText = "Today at ";
+        } else {
+            // If not today, we want to show date in the format of (M/D/YYYY).
+            // Note: Format doesn't quite work on Firefox for Android (as of v43).
+            dayText = date.toLocaleDateString('en-US') + " ";
+        }
+        return dayText + date.toLocaleTimeString('en-US', {hour12: true, hour: "numeric", minute: "numeric"});
+    }
+
+    // Return the Short format, which is either the time (H:MM) if the date is today or the date (M/D/YYYY) if not.
+    if (date.toDateString() === curntDate.toDateString()) {
+        // If today, then just show time. Note: Format doesn't quite work on Firefox for Android (as of v43).
+        return date.toLocaleTimeString('en-US', {hour12: true, hour: "numeric", minute: "numeric"});
+    }
+    // If not today, just show date in the format of (M/D/YYYY).
+    return date.toLocaleDateString('en-US');
+}
+
+function hideModal() {
+    document.getElementById("modal").style.visibility = "hidden";
+}
+
+function showModal(host) {
+    // Set the html fields to the host values.
+    document.getElementById("name").value = host.name;
+    document.getElementById("owner").value = (host.owner === undefined) ? "" : host.owner;
+
+    // Pick to correct type in the drop down.
+    var selectType = document.getElementById("type");
+    var found = false;
+    for (var i = 0; i < selectType.length; i++) {
+        if (selectType[i].value == host.type) {
+            selectType.options.selectedIndex = i;
+            found = true;
+            break;
+        }
+    }
+    // Default to unknown if no matches were found.
+    if (!found) {
+        selectType.options.selectedIndex = selectType.length - 1;
+    }
+
+    document.getElementById("mac").value = host.mac;
+    document.getElementById("ip").value = host.ip;
+    document.getElementById("manufacturer").value = host.manufacturer;
+    document.getElementById("last").value = getDateText(host.last);
+
+    document.getElementById("modal").style.visibility = "visible";
+}
+
+/** Limit malicious characters or abuse via input by stripping non-alphanumeric and extra spaces. */
+function cleanInput(input) {
+    if (input === undefined || input.length === 0) return input;
+    input = input.replace(/[^A-Za-z0-9: ]/g, "").replace(/ +/g, " "); // Strip any non-alphanumeric and merge spaces.
+    input = input.trim().substring(0, 20); // Truncate to 20 characters.
+    return input;
+}
+
+function updateHost() {
+    let id = cleanInput(document.getElementById("mac").value);
+    let name = cleanInput(document.getElementById("name").value);
+    let owner = cleanInput(document.getElementById("owner").value);
+    let type = cleanInput(document.getElementById("type").value);
+
+    axios.put("/api/host/" + id, { "name": name, "owner": owner, "type": type })
+    .then(function (response) {
+        if (response.status !== 200) {
+            // TODO: Problem!
+            console.error(response);
+            return;
+        }
+
+//        console.log("Host updated with: name=" + name + ", owner=" + owner + ", type=" + type);
+        hideModal(); // Hide the form.
+        tileView.refreshHosts(); // Refresh the list.
+    })
+    .catch(function (error) {
+        // TODO: Problem!
+        console.error(error);
+    });
+}
+
+function deleteHost() {
+    let id = cleanInput(document.getElementById("mac").value);
+
+    axios.delete("/api/host/" + id)
+    .then(function (response) {
+        if (response.status !== 200) {
+            // TODO: Problem!
+            console.error(response);
+            return;
+        }
+
+//        console.log("Host " + id " + " deleted.");
+        hideModal(); // Hide the form.
+        tileView.refreshHosts(); // Refresh the list.
+    })
+    .catch(function (error) {
+        // TODO: Problem!
+        console.error(error);
+    });
+}
+</script>
+</body></html>

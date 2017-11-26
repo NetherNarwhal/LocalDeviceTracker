@@ -2,6 +2,11 @@ var assert = require('assert');
 var hosts = require('../hosts.js');
 
 describe("Host", function() {
+    // Runs before each test in this block
+    beforeEach(function() {
+        hosts.forTesting.setUnderTestFlag();
+    });
+
     describe("getMACAddress()", function () {
         it("should return a MAC address for this machine", function () {
             var mac = hosts.forTesting.getMACAddress();
@@ -130,10 +135,10 @@ describe("Host", function() {
         // Runs before each test in this block
         beforeEach(function() {
             hosts.forTesting.setHosts([
-                { "name": "A1", "type": "router", "mac": "A1:B2:C3:00:00:0A", "ip": "192.168.1.1" },
-                { "name": "A2", "type": "server", "mac": "A1:B2:C3:00:00:0B", "ip": "192.168.1.2" },
-                { "name": "A3", "type": "phone", "mac": "A1:B2:C3:00:00:0C", "ip": "192.168.1.3" },
-                { "name": "A4", "type": "laptop", "mac": "A1:B2:C3:00:00:0D", "ip": "192.168.1.4" }
+                { "name": "A1", "type": "router", "mac": "A1:B2:C3:00:00:0A", "ip": "192.168.1.1", "manufacturer": "TestCo" },
+                { "name": "A2", "type": "server", "mac": "A1:B2:C3:00:00:0B", "ip": "192.168.1.2", "manufacturer": "TestCo" },
+                { "name": "A3", "type": "phone", "mac": "A1:B2:C3:00:00:0C", "ip": "192.168.1.3", "manufacturer": "TestCo" },
+                { "name": "A4", "type": "laptop", "mac": "A1:B2:C3:00:00:0D", "ip": "192.168.1.4", "manufacturer": "TestCo" }
             ]);
         });
 
@@ -202,7 +207,7 @@ describe("Host", function() {
             // Override our beforeEach method to make things unsorted.
             hosts.forTesting.setHosts([
                 { "name": "A3", "type": "phone", "mac": "A1:B2:C3:00:00:0C", "ip": "192.168.1.3" },
-                { "name": "A2", "type": "server", "mac": "A1:B2:C3:00:00:0B", "ip": "192.168.1.2" },
+                { "name": "A2", "type": "server", "mac": "A1:B2:C3:00:00:0B", "ip": "192.168.1.2"},
                 { "name": "A1", "type": "router", "mac": "A1:B2:C3:00:00:0A", "ip": "192.168.1.1" },
                 { "name": "A4", "type": "laptop", "mac": "A1:B2:C3:00:00:0D", "ip": "192.168.1.4" }
             ]);
@@ -228,7 +233,7 @@ describe("Host", function() {
             // Override our beforeEach method to make things unsorted.
             hosts.forTesting.setHosts([
                 { "name": "A3", "type": "phone", "mac": "A1:B2:C3:00:00:0C", "ip": "192.168.1.3" },
-                { "name": "A2", "type": "server", "mac": "A1:B2:C3:00:00:0B", "ip": "192.168.1.2" },
+                { "name": "A2", "type": "server", "mac": "A1:B2:C3:00:00:0B", "ip": "192.168.1.2"},
                 { "name": "A1", "type": "router", "mac": "A1:B2:C3:00:00:0A", "ip": "192.168.1.1" },
                 { "name": "A4", "type": "laptop", "mac": "A1:B2:C3:00:00:0D", "ip": "192.168.1.4" }
             ]);
@@ -297,20 +302,208 @@ describe("Host", function() {
         });
     });
 
-    describe("updateHost()", function () {
-        var hostMAC = "A1:B2:C3:00:00:0B";
-
+    describe("getHost()", function () {
         // Runs before each test in this block
         beforeEach(function() {
             hosts.forTesting.setHosts([
                 { "name": "A1", "type": "router", "mac": "A1:B2:C3:00:00:0A", "ip": "192.168.1.1" },
-                { "name": "A2", "type": "server", "mac": "A1:B2:C3:00:00:0B", "ip": "192.168.1.2" },
+                { "name": "A2", "type": "server", "mac": "A1:B2:C3:00:00:0B", "ip": "192.168.1.2"},
                 { "name": "A3", "type": "phone", "mac": "A1:B2:C3:00:00:0C", "ip": "192.168.1.3" },
                 { "name": "A4", "type": "laptop", "mac": "A1:B2:C3:00:00:0D", "ip": "192.168.1.4" }
             ]);
         });
 
-        it("should set a new name, without changing type (undefined)", function () {
+        it("should return the host that exists", function () {
+            var mac = "A1:B2:C3:00:00:0A";
+            var ret = hosts.getHost(mac);
+
+            assert(ret, "Returned something other than true");
+            // Validate returned host was what we wanted.
+            assert.strictEqual(ret.name, "A1", "Host should not have changed. Name: " + ret.name);
+            assert.strictEqual(ret.owner, undefined, "Owner should not have changed. Owner: " + ret.owner);
+            assert.strictEqual(ret.type, "router", "Type should not have changed. Type: " + ret.type);
+        });
+
+        it("should return nothing (undefined) if the host doesn't exist", function () {
+            var mac = "A1:B2:C3:00:00:EE";
+            var ret = hosts.getHost(mac);
+
+            assert.strictEqual(ret, undefined, "Nothing should have been returned. " + ret);
+        });
+    });
+
+    describe("addHost()", function () {
+        // Runs before each test in this block
+        beforeEach(function() {
+            hosts.forTesting.setHosts([
+                { "name": "A1", "type": "router", "mac": "A1:B2:C3:00:00:0A", "ip": "192.168.1.1" },
+                { "name": "A2", "type": "server", "mac": "A1:B2:C3:00:00:0B", "ip": "192.168.1.2"},
+                { "name": "A3", "type": "phone", "mac": "A1:B2:C3:00:00:0C", "ip": "192.168.1.3" },
+                { "name": "A4", "type": "laptop", "mac": "A1:B2:C3:00:00:0D", "ip": "192.168.1.4" }
+            ]);
+        });
+
+        it("should add a new host if not already created", function () {
+            var mac = "A1:B2:C3:00:00:0E";
+            var name = "A5";
+            var owner = "Bob";
+            var type = "server";
+            var ret = hosts.addHost(mac, name, owner, type);
+            var list = hosts.getHosts();
+
+            assert(ret, "Returned something other than true");
+            assert(list, "List is null");
+            assert(Array.isArray(list), "List is not an array");
+            assert.strictEqual(list.length, 5, "List has the wrong number of results: " + list.length);
+            // Should have sorted out to be last host entry.
+            assert.strictEqual(list[4].name, name, "Host was not updated properly. Name: " + list[4].name);
+            assert.strictEqual(list[4].type, type, "Type should not have changed. Type: " + list[4].type);
+        });
+
+        it("should ignore requests to add a host that already exists", function () {
+            var mac = "A1:B2:C3:00:00:0A";
+            var name = "A5";
+            var owner = "Bob";
+            var type = "server";
+            var ret = hosts.addHost(mac, name, owner, type);
+            var list = hosts.getHosts();
+
+            assert(ret, "Returned something other than true");
+            assert(list, "List is null");
+            assert(Array.isArray(list), "List is not an array");
+            assert.strictEqual(list.length, 4, "List has the wrong number of results: " + list.length);
+            // Validate returned host was the original, not the new values we passed in.
+            assert.strictEqual(ret.name, "A1", "Host should not have changed. Name: " + ret.name);
+            assert.strictEqual(ret.owner, undefined, "Owner should not have changed. Owner: " + ret.owner);
+            assert.strictEqual(ret.type, "router", "Type should not have changed. Type: " + ret.type);
+        });
+
+        it("should create a new host with default values if none are provided", function () {
+            var mac = "A1:B2:C3:00:00:0E";
+            var ret = hosts.addHost(mac);
+
+            assert(ret, "Returned something other than true");
+            // Validate returned host was the original, not the new values we passed in.
+            assert.strictEqual(ret.mac, mac, "Mac was an unexpected value. Mac: " + ret.mac);
+            assert.strictEqual(ret.name, "Unknown", "Name is not the default (Unknown). Name: " + ret.name);
+            assert.strictEqual(ret.owner, undefined, "Owner is not undefined (default). Owner: " + ret.owner);
+            assert.strictEqual(ret.type, "unknown", "Type is not the default (unknown). Type: " + ret.type);
+            assert.strictEqual(ret.ip, undefined, "IP is not undefined (default). IP: " + ret.ip);
+            assert.strictEqual(ret.online, undefined, "Online is not undefined (default). Online: " + ret.online);
+            assert.strictEqual(ret.last, undefined, "Last is not undefined (default). Last: " + ret.last);
+        });
+
+        it("should create a new host with a provided name", function () {
+            var mac = "A1:B2:C3:00:00:0E";
+            var name = "A5";
+            var ret = hosts.addHost(mac, name);
+
+            assert(ret, "Returned something other than true");
+            // Validate returned host was the original, not the new values we passed in.
+            assert.strictEqual(ret.mac, mac, "Mac was an unexpected value. Mac: " + ret.mac);
+            assert.strictEqual(ret.name, name, "Name was an unexpected value. Name: " + ret.name);
+            assert.strictEqual(ret.owner, undefined, "Owner is not undefined (default). Owner: " + ret.owner);
+            assert.strictEqual(ret.type, "unknown", "Type is not the default (unknown). Type: " + ret.type);
+            assert.strictEqual(ret.ip, undefined, "IP is not undefined (default). IP: " + ret.ip);
+            assert.strictEqual(ret.online, undefined, "Online is not undefined (default). Online: " + ret.online);
+            assert.strictEqual(ret.last, undefined, "Last is not undefined (default). Last: " + ret.last);
+        });
+
+        it("should create a new host with a provided owner", function () {
+            var mac = "A1:B2:C3:00:00:0E";
+            var owner = "Bob";
+            var ret = hosts.addHost(mac, undefined, owner);
+
+            assert(ret, "Returned something other than true");
+            // Validate returned host was the original, not the new values we passed in.
+            assert.strictEqual(ret.mac, mac, "Mac was an unexpected value. Mac: " + ret.mac);
+            assert.strictEqual(ret.name, "Unknown", "Name is not the default (Unknown). Name: " + ret.name);
+            assert.strictEqual(ret.owner, owner, "Owner was an unexpected value. Owner: " + ret.owner);
+            assert.strictEqual(ret.type, "unknown", "Type is not the default (unknown). Type: " + ret.type);
+            assert.strictEqual(ret.ip, undefined, "IP is not undefined (default). IP: " + ret.ip);
+            assert.strictEqual(ret.online, undefined, "Online is not undefined (default). Online: " + ret.online);
+            assert.strictEqual(ret.last, undefined, "Last is not undefined (default). Last: " + ret.last);
+        });
+
+        it("should create a new host with a provided type", function () {
+            var mac = "A1:B2:C3:00:00:0E";
+            var type = "phone";
+            var ret = hosts.addHost(mac, undefined, undefined, type);
+
+            assert(ret, "Returned something other than true");
+            // Validate returned host was the original, not the new values we passed in.
+            assert.strictEqual(ret.mac, mac, "Mac was an unexpected value. Mac: " + ret.mac);
+            assert.strictEqual(ret.name, "Unknown", "Name is not the default (Unknown). Name: " + ret.name);
+            assert.strictEqual(ret.owner, undefined, "Owner is not undefined (default). Owner: " + ret.owner);
+            assert.strictEqual(ret.type, type, "Type was an unexpected value. Type: " + ret.type);
+            assert.strictEqual(ret.ip, undefined, "IP is not undefined (default). IP: " + ret.ip);
+            assert.strictEqual(ret.online, undefined, "Online is not undefined (default). Online: " + ret.online);
+            assert.strictEqual(ret.last, undefined, "Last is not undefined (default). Last: " + ret.last);
+        });
+
+        it("should create a new host with a provided IP", function () {
+            var mac = "A1:B2:C3:00:00:0E";
+            var ip = "1.1.1.10";
+            var ret = hosts.addHost(mac, undefined, undefined, undefined, ip);
+
+            assert(ret, "Returned something other than true");
+            // Validate returned host was the original, not the new values we passed in.
+            assert.strictEqual(ret.mac, mac, "Mac was an unexpected value. Mac: " + ret.mac);
+            assert.strictEqual(ret.name, "Unknown", "Name is not the default (Unknown). Name: " + ret.name);
+            assert.strictEqual(ret.owner, undefined, "Owner is not undefined (default). Owner: " + ret.owner);
+            assert.strictEqual(ret.type, "unknown", "Type is not the default (unknown). Type: " + ret.type);
+            assert.strictEqual(ret.ip, ip, "IP was an unexpected value. IP: " + ret.ip);
+            assert.strictEqual(ret.online, undefined, "Online is not undefined (default). Online: " + ret.online);
+            assert.strictEqual(ret.last, undefined, "Last is not undefined (default). Last: " + ret.last);
+        });
+
+        it("should create a new host with a provided online status", function () {
+            var mac = "A1:B2:C3:00:00:0E";
+            var online = true;
+            var ret = hosts.addHost(mac, undefined, undefined, undefined, undefined, online);
+
+            assert(ret, "Returned something other than true");
+            // Validate returned host was the original, not the new values we passed in.
+            assert.strictEqual(ret.mac, mac, "Mac was an unexpected value. Mac: " + ret.mac);
+            assert.strictEqual(ret.name, "Unknown", "Name is not the default (Unknown). Name: " + ret.name);
+            assert.strictEqual(ret.owner, undefined, "Owner is not undefined (default). Owner: " + ret.owner);
+            assert.strictEqual(ret.type, "unknown", "Type is not the default (unknown). Type: " + ret.type);
+            assert.strictEqual(ret.ip, undefined, "IP is not undefined (default). IP: " + ret.ip);
+            assert.strictEqual(ret.online, online, "Online was an unexpected value. Online: " + ret.online);
+            assert.strictEqual(ret.last, undefined, "Last is not undefined (default). Last: " + ret.last);
+        });
+
+        it("should create a new host with a provided last time", function () {
+            var mac = "A1:B2:C3:00:00:0E";
+            var last = "2018-01-18T03:43:24.217Z";
+            var ret = hosts.addHost(mac, undefined, undefined, undefined, undefined, undefined, last);
+
+            assert(ret, "Returned something other than true");
+            // Validate returned host was the original, not the new values we passed in.
+            assert.strictEqual(ret.mac, mac, "Mac was an unexpected value. Mac: " + ret.mac);
+            assert.strictEqual(ret.name, "Unknown", "Name is not the default (Unknown). Name: " + ret.name);
+            assert.strictEqual(ret.owner, undefined, "Owner is not undefined (default). Owner: " + ret.owner);
+            assert.strictEqual(ret.type, "unknown", "Type is not the default (unknown). Type: " + ret.type);
+            assert.strictEqual(ret.ip, undefined, "IP is not undefined (default). IP: " + ret.ip);
+            assert.strictEqual(ret.online, undefined, "Online is not undefined (default). Online: " + ret.online);
+            assert.strictEqual(ret.last, last, "Last was an unexpected value. Last: " + ret.last);
+        });
+    });
+
+    describe("updateHost()", function () {
+        const hostMAC = "A1:B2:C3:00:00:0B";
+
+        // Runs before each test in this block
+        beforeEach(function() {
+            hosts.forTesting.setHosts([
+                { "name": "A1", "type": "router", "mac": "A1:B2:C3:00:00:0A", "ip": "192.168.1.1" },
+                { "name": "A2", "type": "server", "mac": "A1:B2:C3:00:00:0B", "ip": "192.168.1.2"},
+                { "name": "A3", "type": "phone", "mac": "A1:B2:C3:00:00:0C", "ip": "192.168.1.3" },
+                { "name": "A4", "type": "laptop", "mac": "A1:B2:C3:00:00:0D", "ip": "192.168.1.4" }
+            ]);
+        });
+
+        it("should set a new name, without changing type or owner (undefined)", function () {
             var name = "Testing";
             var ret = hosts.updateHost(hostMAC, name);
             var list = hosts.getHosts();
@@ -324,9 +517,9 @@ describe("Host", function() {
             assert.strictEqual(list[3].type, "server", "Type should not have changed. Type: " + list[3].type);
         });
 
-        it("should set a new name, without changing type (null)", function () {
+        it("should set a new name, without changing type or owner (null)", function () {
             var name = "Testing";
-            var ret = hosts.updateHost(hostMAC, name, null);
+            var ret = hosts.updateHost(hostMAC, name, null, null);
             var list = hosts.getHosts();
 
             assert(ret, "Returned something other than true");
@@ -338,9 +531,9 @@ describe("Host", function() {
             assert.strictEqual(list[3].type, "server", "Type should not have changed. Type: " + list[3].type);
         });
 
-        it("should set a new name, without changing type (empty)", function () {
+        it("should set a new name, without changing type or owner (empty)", function () {
             var name = "Testing";
-            var ret = hosts.updateHost(hostMAC, name, "");
+            var ret = hosts.updateHost(hostMAC, name, "", "");
             var list = hosts.getHosts();
 
             assert(ret, "Returned something other than true");
@@ -352,9 +545,9 @@ describe("Host", function() {
             assert.strictEqual(list[3].type, "server", "Type should not have changed. Type: " + list[3].type);
         });
 
-        it("should set a new type, without changing name (undefined)", function () {
+        it("should set a new type, without changing name or owner (undefined)", function () {
             var type = "gearbox";
-            var ret = hosts.updateHost(hostMAC, undefined, type);
+            var ret = hosts.updateHost(hostMAC, undefined, undefined, type);
             var list = hosts.getHosts();
 
             assert(ret, "Returned something other than true");
@@ -366,9 +559,9 @@ describe("Host", function() {
             assert.strictEqual(list[1].type, type, "Host was not updated properly. Type: " + list[1].type);
         });
 
-        it("should set a new type, without changing name (null)", function () {
+        it("should set a new type, without changing name or owner (null)", function () {
             var type = "gearbox";
-            var ret = hosts.updateHost(hostMAC, null, type);
+            var ret = hosts.updateHost(hostMAC, null, null, type);
             var list = hosts.getHosts();
 
             assert(ret, "Returned something other than true");
@@ -380,9 +573,9 @@ describe("Host", function() {
             assert.strictEqual(list[1].type, type, "Host was not updated properly. Type: " + list[1].type);
         });
 
-        it("should set a new type, without changing name (empty)", function () {
+        it("should set a new type, without changing name or owner (empty)", function () {
             var type = "gearbox";
-            var ret = hosts.updateHost(hostMAC, "", type);
+            var ret = hosts.updateHost(hostMAC, "", "", type);
             var list = hosts.getHosts();
 
             assert(ret, "Returned something other than true");
@@ -397,7 +590,7 @@ describe("Host", function() {
         it("should set a new name and type", function () {
             var name = "Testing";
             var type = "gearbox";
-            var ret = hosts.updateHost(hostMAC, name, type);
+            var ret = hosts.updateHost(hostMAC, name, undefined, type);
             var list = hosts.getHosts();
 
             assert(ret, "Returned something other than true");
@@ -421,19 +614,19 @@ describe("Host", function() {
     });
 
     describe("removeHost()", function () {
-        var hostMAC = "A1:B2:C3:00:00:0B";
+        const hostMAC = "A1:B2:C3:00:00:0B";
 
         // Runs before each test in this block
         beforeEach(function() {
             hosts.forTesting.setHosts([
                 { "name": "A1", "type": "router", "mac": "A1:B2:C3:00:00:0A", "ip": "192.168.1.1" },
-                { "name": "A2", "type": "server", "mac": "A1:B2:C3:00:00:0B", "ip": "192.168.1.2" },
+                { "name": "A2", "type": "server", "mac": "A1:B2:C3:00:00:0B", "ip": "192.168.1.2"},
                 { "name": "A3", "type": "phone", "mac": "A1:B2:C3:00:00:0C", "ip": "192.168.1.3" },
                 { "name": "A4", "type": "laptop", "mac": "A1:B2:C3:00:00:0D", "ip": "192.168.1.4" }
             ]);
         });
 
-        it("should remove an existing host", function () {
+        it("should remove an existing host and return true", function () {
             var ret = hosts.removeHost(hostMAC);
             var list = hosts.getHosts();
 
@@ -446,11 +639,11 @@ describe("Host", function() {
             assert.strictEqual(list[2].mac, "A1:B2:C3:00:00:0D", "Wrong host was removed or hosts are out of order?");
         });
 
-        it("should change nothing if entry was not found", function () {
+        it("should change nothing if entry was not found and return false", function () {
             var ret = hosts.removeHost("Doesn't Exist");
             var list = hosts.getHosts();
 
-            assert(ret, "Returned something other than true");
+            assert(!ret, "Returned something other than false");
             assert(list, "List is null");
             assert(Array.isArray(list), "List is not an array");
             assert.strictEqual(list.length, 4, "List has the wrong number of results: " + list.length);
