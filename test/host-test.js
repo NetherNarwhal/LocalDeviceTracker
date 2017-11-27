@@ -12,7 +12,7 @@ describe("Host", function() {
             var mac = hosts.forTesting.getMACAddress();
             assert(mac, "Mac is null");
         });
-        it("should should have the correct format", function () {
+        it("should have the correct format", function () {
             var mac = hosts.forTesting.getMACAddress();
             var format = /^(([A-Z0-9]{2}(:|\b)){6})$/; // XX:XX:XX:XX:XX:XX
             assert(format.test(mac), "Mac is not the correct format: " + mac);
@@ -24,7 +24,7 @@ describe("Host", function() {
             var ip = hosts.forTesting.getIPAddress();
             assert(ip, "IP is null");
         });
-        it("should should have the correct format", function () {
+        it("should have the correct format", function () {
             var ip = hosts.forTesting.getIPAddress();
             var format = /^(([0-9]{1,3}(\.|\b)){4})$/; // IPv4: ###.###.###.###
             assert(format.test(ip), "IP is not the correct format: " + ip);

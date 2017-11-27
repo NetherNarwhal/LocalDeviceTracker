@@ -1,18 +1,18 @@
 "use strict";
-let spawn = require('child_process').spawn;
-let jsonfile = require('jsonfile');
-let os = require('os');
-let request = require('request');
-let hosts = [];
-let curntMac;
-let curntIP;
-let timer;
-let refreshInterval = 5 * 60 * 1000; // 5 minutes
-let underTest = false; // Prevents extra logging and external actions from being taken.
+var spawn = require('child_process').spawn;
+var jsonfile = require('jsonfile');
+var os = require('os');
+var request = require('request');
+var hosts = [];
+var curntMac;
+var curntIP;
+var timer;
+var refreshInterval = 5 * 60 * 1000; // 5 minutes
+var underTest = false; // Prevents extra logging and external actions from being taken.
 
 /*
 Format of a host object
-let host = {
+var host = {
     'name': 'tbd',
     'owner': 'test',
     'type': 'server',
@@ -53,7 +53,7 @@ Hosts.getHosts = function() {
 
 /** Creates a new host entry. */
 Hosts.addHost = function(mac, name, owner, type, ip, online, last) {
-    let host = Hosts.getHost(mac);
+    var host = Hosts.getHost(mac);
     if (host !== undefined) {
         if (!underTest) console.log("Add found a match?", host);
         return host;
@@ -79,7 +79,7 @@ Hosts.addHost = function(mac, name, owner, type, ip, online, last) {
 
 /** Returns a specific host based on the provided mac address (id). */
 Hosts.getHost = function(mac) {
-    for (let i = 0; i < hosts.length; i++) { // Search the hosts.
+    for (var i = 0; i < hosts.length; i++) { // Search the hosts.
         if (hosts[i].mac === mac) return hosts[i];
     }
 }
@@ -87,7 +87,7 @@ Hosts.getHost = function(mac) {
 /** Allows the caller to update the name and/or type of an existing host. */
 Hosts.updateHost = function(mac, newName, newOwner, newType) {
 //    console.log("Updating host " + mac + " with: name=" + newName + ", owner=" + newOwner + ", type=" + newType);
-    let host = Hosts.getHost(mac);
+    var host = Hosts.getHost(mac);
     if (host === undefined) {
         if (!underTest) console.error("Was not able to find the specified host to update. mac: " + mac);
         return false;
@@ -104,7 +104,7 @@ Hosts.updateHost = function(mac, newName, newOwner, newType) {
 
 /** Removes the specified host from the list. The call is ignored if the host does not exist. */
 Hosts.removeHost = function(mac) {
-    for (let i = 0; i < hosts.length; i++) {
+    for (var i = 0; i < hosts.length; i++) {
         if (hosts[i].mac === mac) {
             hosts.splice(i, 1);
             persistList();
@@ -122,8 +122,8 @@ function refresh() {
     // Do a nmap discovery scan to get IPs and MAC addresses.
     // !IMPORTANT! On Linux, you must run node as root/sudo or the nmap output won't include mac addresses.
     console.log("Running nmap...");
-    let output = "";
-    let nmap = spawn("nmap", ["-sn", "192.168.1.0/24"]);
+    var output = "";
+    var nmap = spawn("nmap", ["-sn", "192.168.1.0/24"]);
     nmap.stdout.on('data', function(data) {
         output += data;
     });
@@ -161,8 +161,8 @@ function scanHost(host) {
     // Do a nmap discovery scan to get IPs and MAC addresses.
     // !IMPORTANT! On Linux, you must run node as root/sudo or the nmap output won't include mac addresses.
     console.log("Running nmap...");
-    let output = "";
-    let nmap = spawn("nmap", ["-sN -O", host]);
+    var output = "";
+    var nmap = spawn("nmap", ["-sN -O", host]);
     nmap.stdout.on('data', function(data) {
         output += data;
     });
@@ -187,7 +187,7 @@ function parseNMapOutput(input) {
 
     // Use regex to extract IPs and MACs (order is IP then MAC, with last IP being for current machine so no MAC).
     // Does NOT currently support IPv6.
-    let list = input.match(/(([0-9]{1,3}(\.|\b)){4})|(([A-Z0-9]{2}(:|\b)){6})/g);
+    var list = input.match(/(([0-9]{1,3}(\.|\b)){4})|(([A-Z0-9]{2}(:|\b)){6})/g);
     if (list === null || list.length === 0) {
         if (!underTest) console.error("Wasn't able to extract addresses from nmap output. Results may be invalid.");
         return [];
@@ -195,9 +195,9 @@ function parseNMapOutput(input) {
 
     // Check for no mac addresses, which should indicate that we are not running as admin. If so,
     // clear the list so we don't corrupt the list of hosts.
-    let macFormat = /^(([A-Z0-9]{2}(:|\b)){6})$/; // XX:XX:XX:XX:XX:XX
-    let found = false;
-    for (let i = 0; i < list.length; i++) {
+    var macFormat = /^(([A-Z0-9]{2}(:|\b)){6})$/; // XX:XX:XX:XX:XX:XX
+    var found = false;
+    for (var i = 0; i < list.length; i++) {
         if (macFormat.test(list[i])) {
             found  = true;
             break;
@@ -213,9 +213,9 @@ function parseNMapOutput(input) {
     // is listed last. For v6, at least on Linux, the current machine may be in the middle of the list.
     // In both cases the mac isn't included. So to parse the list consistently we need to insert the
     // current machine's mac in there where its IP is found.
-    let ip = getIPAddress();
+    var ip = getIPAddress();
     found = false;
-    for (let i = 0; i < list.length; i++) {
+    for (var i = 0; i < list.length; i++) {
         if (list[i] === ip) {
             if (i === list.length - 1) {
                 list.push(getMACAddress()); // Found it at the end (nmap 7).
@@ -235,21 +235,22 @@ function parseNMapOutput(input) {
 /** Gets the active network interface for the current machine. Does NOT currently support IPv6. */
 function getInterface() {
     // There are likely multiple interfaces, so loop through them looking for an external facing IPv4 address.
-    let interfaces = os.networkInterfaces();
-    for (let i in interfaces) {
-        let iface = interfaces[i].filter(function(props) {
+    var interfaces = os.networkInterfaces();
+    for (var i in interfaces) {
+        var iface = interfaces[i].filter(function(props) {
             return props.family === 'IPv4' && props.internal === false;
         });
-        if(iface.length > 0 && !iface[0].address.startsWith("169.254")) { // 169.254/16 are for link-local, used in Win for APIPA.
-            return iface[0];
-        }
+        if (iface === undefined || iface.length === 0 || iface[0].address === undefined) continue;
+        // Not using .startsWith here to support older versions of node (e.g. Wheezy version of Raspian).
+        if (iface[0].address.lastIndexOf("169.254", 0) === 0) continue; // 169.254/16 are for link-local, used in Win for APIPA.
+        return iface[0];
     }
 }
 
 /** Gets the MAC address for the current machine. */
 function getMACAddress() {
     if (curntMac === undefined || curntMac === null) {
-        let iface = getInterface();
+        var iface = getInterface();
         if (iface === null || iface === undefined) {
             if (!underTest) console.error("Unable to retrieve the local mac address.");
             return "??:??:??:??:??:??";
@@ -263,7 +264,7 @@ function getMACAddress() {
 /** Gets the IP address for the current machine. Does NOT currently support IPv6. */
 function getIPAddress() {
     if (curntIP === undefined || curntIP === null) {
-        let iface = getInterface();
+        var iface = getInterface();
         if (iface === null || iface === undefined) {
             console.error("Unable to retrieve the local ip address.");
             return "?.?.?.?";
@@ -301,8 +302,8 @@ function getDeviceManufacturer(host) {
 
 /** Updates the existing host list based on the provided nmap results. */
 function synchList(latest) {
-    let currentTime = new Date();
-    let found = false;
+    var currentTime = new Date();
+    var found = false;
 
     resetStatus();
 
@@ -317,14 +318,14 @@ function synchList(latest) {
         return;
     }
 
-    for (let i = 0; i < latest.length; i++) {
-        let ip = latest[i];
-        let mac = latest[++i];
+    for (var i = 0; i < latest.length; i++) {
+        var ip = latest[i];
+        var mac = latest[++i];
         found = false;
 
         // Loop through the existing list for a match.
-        for (let j = 0; j < hosts.length; j++) {
-            let host = hosts[j];
+        for (var j = 0; j < hosts.length; j++) {
+            var host = hosts[j];
             if (host.mac === mac) {
                 // Match!
                 found = true;
@@ -339,7 +340,7 @@ function synchList(latest) {
     }
 
     // Make sure all devices have a manufacturer listed.
-    for (let i = 0; i < hosts.length; i++) {
+    for (var i = 0; i < hosts.length; i++) {
         if (hosts[i].manufacturer === undefined) {
             getDeviceManufacturer(hosts[i]);
         }
@@ -355,7 +356,7 @@ function sortList() {
 
 /** Reset online status for all existing hosts. */
 function resetStatus() {
-    for (let k = 0; k < hosts.length; k++) {
+    for (var k = 0; k < hosts.length; k++) {
         hosts[k].online = false;
     }
 }
