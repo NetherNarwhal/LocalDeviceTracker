@@ -278,7 +278,12 @@ function getIPAddress() {
 
 /** Leverages a web API to get the device manufacturer based on the mac address. We don't pass it back because this is asynch. */
 function getDeviceManufacturer(host) {
-    if (underTest) return; // Don't run if just unit testing.
+    // Don't run if just unit testing.
+    if (underTest) {
+        host.manufacturer = "underTest";
+        return;
+    }
+
     // Get vendor info for unknown mac addresses using http://api.macvendors.com/ as older versions of nmap are suspect.
     request("http://api.macvendors.com/" + host.mac, function(error, response, body) {
         // Handle error situations.
@@ -289,10 +294,8 @@ function getDeviceManufacturer(host) {
         }
         if (response.statusCode == 404 || body === null || body == "") {
             host.manufacturer = "unknown";
-//            console.log("Manufacturer for '" + host.mac + "'='" + body + "'");
         } else if (response.statusCode == 200) {
             host.manufacturer = body;
-//            console.log("Manufacturer for '" + host.mac + "'='" + body + "'");
         } else {
             console.log("Bad return from manufacturer lookup API for '" + host.mac + "': " + response.statusCode);
             return;
